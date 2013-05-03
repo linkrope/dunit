@@ -15,6 +15,7 @@ import core.time;
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.string;
 
 version (unittest) import std.exception;
 
@@ -35,8 +36,20 @@ class AssertException : Exception
  * Asserts that a condition is true.
  * Throws: AssertException otherwise
  */
-void assertTrue( string file = __FILE__, size_t line = __LINE__)
-		(bool condition,  string msg = null)
+void assertTrue(string file = __FILE__, size_t line = __LINE__)
+		(const bool condition,  const string msg = null)
+{
+	assertTrueImpl!(file, line)(condition, msg);
+}
+
+void assertTrue(string file = __FILE__, size_t line = __LINE__, A...)
+		(const bool condition,  const string msg, A a)
+{
+	assertTrueImpl!(file, line)(condition, xformat(msg, a));
+}
+
+void assertTrueImpl(string file, size_t line)
+		(const bool condition,  const string msg)
 {
     if (condition)
         return;
@@ -48,8 +61,20 @@ void assertTrue( string file = __FILE__, size_t line = __LINE__)
  * Asserts that a condition is false.
  * Throws: AssertException otherwise
  */
-void assertFalse( string file = __FILE__, size_t line = __LINE__)
-		(bool condition,  string msg = null)
+void assertFalse(string file = __FILE__, size_t line = __LINE__)
+		(const bool condition,  const string msg = null)
+{
+	assertFalseImpl!(file, line)(condition, msg);
+}
+
+void assertFalse(string file = __FILE__, size_t line = __LINE__, A...)
+		(const bool condition,  const string msg, A a)
+{
+	assertFalseImpl!(file, line)(condition, xformat(msg, a));
+}
+
+void assertFalseImpl(string file, size_t line)
+		(const bool condition,  const string msg)
 {
     if (!condition)
         return;
@@ -60,6 +85,8 @@ void assertFalse( string file = __FILE__, size_t line = __LINE__)
 unittest
 {
     assertTrue(true);
+    assertTrue(true, "print%c assert messages", 'f');
+
     assertEquals("Assertion failure",
             collectExceptionMsg!AssertException(assertTrue(false)));
 
@@ -264,7 +291,8 @@ public static void assertEventually(string file = __FILE__,
     TickDuration startTime = TickDuration.currSystemTick();
    
     while (!probe()) {
-        Duration elapsedTime = cast(Duration)(TickDuration.currSystemTick() - startTime);
+        Duration elapsedTime = cast(Duration)(TickDuration.currSystemTick() - 
+			startTime);
 
         if (elapsedTime >= timeout) {
             if (msg.empty) {
