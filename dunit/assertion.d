@@ -118,7 +118,8 @@ void assertArrayEquals(T, U)(T[] expecteds, U[] actuals, string msg = null,
 {
     string header = (msg.empty) ? null : msg ~ "; ";
 
-    for (size_t index = 0; index < min(expecteds.length, actuals.length); ++index)
+    const size_t len = min(expecteds.length, actuals.length);
+    for (size_t index = 0; index < len; ++index)
     {
         assertEquals(expecteds[index], actuals[index],
                 header ~ "array mismatch at index " ~ to!string(index),
