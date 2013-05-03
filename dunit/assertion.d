@@ -35,9 +35,8 @@ class AssertException : Exception
  * Asserts that a condition is true.
  * Throws: AssertException otherwise
  */
-void assertTrue(bool condition,  string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertTrue( string file = __FILE__, size_t line = __LINE__)
+		(bool condition,  string msg = null)
 {
     if (condition)
         return;
@@ -49,9 +48,8 @@ void assertTrue(bool condition,  string msg = null,
  * Asserts that a condition is false.
  * Throws: AssertException otherwise
  */
-void assertFalse(bool condition,  string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertFalse( string file = __FILE__, size_t line = __LINE__)
+		(bool condition,  string msg = null)
 {
     if (!condition)
         return;
@@ -74,17 +72,16 @@ unittest
  * Asserts that the values are equal.
  * Throws: AssertException otherwise
  */
-void assertEquals(T, U)(T expected, U actual,  string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertEquals(T, U, string file = __FILE__, size_t line = __LINE__)
+	(T expected, U actual,  string msg = null)
 {
     if (expected == actual)
         return;
 
     string header = (msg.empty) ? null : msg ~ "; ";
 
-    fail(header ~ "expected: <" ~ to!string(expected) ~ "> but was: <"~ to!string(actual) ~ ">",
-            file, line);
+    fail(header ~ "expected: <" ~ to!string(expected) ~ "> but was: <" 
+		~ to!string(actual) ~ ">", file, line);
 }
 
 unittest
@@ -112,23 +109,19 @@ unittest
  * Asserts that the arrays are equal.
  * Throws: AssertException otherwise
  */
-void assertArrayEquals(T, U)(const(T[]) expecteds, const(U[]) actuals, 
-        string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertArrayEquals(T, U, string file = __FILE__, size_t line = __LINE__)
+		(const(T[]) expecteds, const(U[]) actuals, string msg = null)
 {
     string header = (msg.empty) ? null : msg ~ "; ";
 
     const size_t len = min(expecteds.length, actuals.length);
     for (size_t index = 0; index < len; ++index)
     {
-        assertEquals(expecteds[index], actuals[index],
-                header ~ "array mismatch at index " ~ to!string(index),
-                file, line);
+        assertEquals!(T,U,file,line)(expecteds[index], actuals[index],
+                header ~ "array mismatch at index " ~ to!string(index));
     }
-    assertEquals(expecteds.length, actuals.length,
-            header ~ "array length mismatch",
-            file, line);
+    assertEquals!(size_t,size_t,file,line)(expecteds.length, actuals.length,
+            header ~ "array length mismatch");
 }
 
 unittest
@@ -149,9 +142,8 @@ unittest
  * Asserts that the value is null.
  * Throws: AssertException otherwise
  */
-void assertNull(T)(T actual,  string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertNull(T, string file = __FILE__, size_t line = __LINE__)
+		(T actual,  string msg = null)
 {
     if (actual is null)
         return;
@@ -163,9 +155,8 @@ void assertNull(T)(T actual,  string msg = null,
  * Asserts that the value is not null.
  * Throws: AssertException otherwise
  */
-void assertNotNull(T)(T actual,  string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertNotNull(T, string file = __FILE__, size_t line = __LINE__)
+		(T actual,  string msg = null)
 {
     if (actual !is null)
         return;
@@ -190,9 +181,8 @@ unittest
  * Asserts that the values are the same.
  * Throws: AssertException otherwise
  */
-void assertSame(T, U)(T expected, U actual,  string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertSame(T, U, string file = __FILE__, size_t line = __LINE__)
+		(T expected, U actual,  string msg = null)
 {
     if (expected is actual)
         return;
@@ -207,9 +197,8 @@ void assertSame(T, U)(T expected, U actual,  string msg = null,
  * Asserts that the values are not the same.
  * Throws: AssertException otherwise
  */
-void assertNotSame(T, U)(T expected, U actual,  string msg = null,
-        string file = __FILE__,
-        size_t line = __LINE__)
+void assertNotSame(T, U, string file = __FILE__, size_t line = __LINE__)
+		(T expected, U actual,  string msg = null)
 {
     if (expected !is actual)
         return;
@@ -266,11 +255,11 @@ unittest
  *
  * Throws: AssertException when the probe fails to become true before timeout
  */
-public static void assertEventually(bool delegate() probe, 
+public static void assertEventually(string file = __FILE__, 
+		size_t line = __LINE__)
+		(bool delegate() probe, 
         Duration timeout = dur!"msecs"(500), Duration delay = dur!"msecs"(10), 
-        string msg = null,
-        string file = __FILE__, 
-        size_t line = __LINE__)
+        string msg = null)
 {
     TickDuration startTime = TickDuration.currSystemTick();
    
