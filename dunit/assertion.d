@@ -112,7 +112,8 @@ unittest
  * Asserts that the arrays are equal.
  * Throws: AssertException otherwise
  */
-void assertArrayEquals(T, U)(T[] expecteds, U[] actuals, string msg = null,
+void assertArrayEquals(T, U)(const(T[]) expecteds, const(U[]) actuals, 
+        string msg = null,
         string file = __FILE__,
         size_t line = __LINE__)
 {
