@@ -140,15 +140,13 @@ public static int runTests_Progress(string[][string] testNamesByClass)
         catch (AssertException exception)
         {
             failures ~= Entry(className, "this", exception);
-            write(red("F"));
-            stdout.flush();
+            writef_failure("F");
             continue;
         }
         catch (Throwable throwable)
         {
             errors ~= Entry(className, "this", throwable);
-            write(red("E"));
-            stdout.flush();
+            writef_failure("F");
             continue;
         }
 
@@ -160,15 +158,13 @@ public static int runTests_Progress(string[][string] testNamesByClass)
         catch (AssertException exception)
         {
             failures ~= Entry(className, "BeforeClass", exception);
-            write(red("F"));
-            stdout.flush();
+            writef_failure("F");
             continue;
         }
         catch (Throwable throwable)
         {
             errors ~= Entry(className, "BeforeClass", throwable);
-            write(red("E"));
-            stdout.flush();
+            writef_failure("F");
             continue;
         }
 
@@ -177,8 +173,7 @@ public static int runTests_Progress(string[][string] testNamesByClass)
         {
             if (canFind(testClasses[className].ignoredTests, testName))
             {
-                write(yellow("I"));
-                stdout.flush();
+                writef_ignored("I");
                 continue;
             }
 
@@ -194,15 +189,13 @@ public static int runTests_Progress(string[][string] testNamesByClass)
             catch (AssertException exception)
             {
                 failures ~= Entry(className, "Before", exception);
-                write(red("F"));
-                stdout.flush();
+                writef_failure("F");
                 continue;
             }
             catch (Throwable throwable)
             {
                 errors ~= Entry(className, "Before", throwable);
-                write(red("E"));
-                stdout.flush();
+                writef_failure("F");
                 continue;
             }
 
@@ -214,13 +207,13 @@ public static int runTests_Progress(string[][string] testNamesByClass)
             catch (AssertException exception)
             {
                 failures ~= Entry(className, testName, exception);
-                write(red("F"));
+                writef_failure("F");
                 success = false;
             }
             catch (Throwable throwable)
             {
                 errors ~= Entry(className, testName, throwable);
-                write(red("E"));
+                writef_failure("F");
                 success = false;
             }
 
@@ -232,19 +225,18 @@ public static int runTests_Progress(string[][string] testNamesByClass)
             catch (AssertException exception)
             {
                 failures ~= Entry(className, "After", exception);
-                write(red("F"));
+                writef_failure("F");
                 success = false;
             }
             catch (Throwable throwable)
             {
                 errors ~= Entry(className, "After", throwable);
-                write(red("E"));
+                writef_failure("F");
                 success = false;
             }
 
             if (success)
-                write(green("."));
-            stdout.flush();
+                writef_success(".");
         }
 
         // tear down class
@@ -267,7 +259,7 @@ public static int runTests_Progress(string[][string] testNamesByClass)
     if (failures.empty && errors.empty)
     {
         writeln();
-        writefln("%s (%d %s)", green("OK"), count, (count == 1) ? "Test" : "Tests");
+        writef_success("OK (%d %s)\n", count, (count == 1) ? "Test" : "Tests");
         return 0;
     }
 
@@ -307,62 +299,9 @@ public static int runTests_Progress(string[][string] testNamesByClass)
     }
 
     writeln();
-    writeln(red("NOT OK"));
+    writef_failure("NOT OK\n");
     writefln("Tests run: %d, Failures: %d, Errors: %d", count, failures.length, errors.length);
     return (errors.length > 0) ? 2 : (failures.length > 0) ? 1 : 0;
-}
-
-version (Posix)
-{
-    private static string CSI = "\x1B[";
-
-    private static string red(string source)
-    {
-        return canUseColor() ? CSI ~ "37;41;1m" ~ source ~ CSI ~ "0m" : source;
-    }
-
-    private static string green(string source)
-    {
-        return canUseColor() ? CSI ~ "37;42;1m" ~ source ~ CSI ~ "0m" : source;
-    }
-
-    private static string yellow(string source)
-    {
-        return canUseColor() ? CSI ~ "37;43;1m" ~ source ~ CSI ~ "0m" : source;
-    }
-
-    private static bool canUseColor()
-    {
-        static bool useColor = false;
-        static bool computed = false;
-
-        if (!computed)
-        {
-            // disable colors if the results output is written to a file or pipe instead of a tty
-            import core.sys.posix.unistd;
-
-            useColor = isatty(stdout.fileno()) != 0;
-            computed = true;
-        }
-        return useColor;
-    }
-}
-else
-{
-    private static string red(string source)
-    {
-        return source;
-    }
-
-    private static string green(string source)
-    {
-        return source;
-    }
-
-    private static string yellow(string source)
-    {
-        return source;
-    }
 }
 
 /**
@@ -390,13 +329,13 @@ public static int runTests_Tree(string[][string] testNamesByClass)
         }
         catch (AssertException exception)
         {
-            writefln("        FAILURE: this(): %s@%s(%d): %s",
+            writef_failure("        FAILURE: this(): %s@%s(%d): %s\n",
                     typeid(exception).name, exception.file, exception.line, exception.msg);
             ++failureCount;
         }
         catch (Throwable throwable)
         {
-            writeln("        ERROR: this(): ", throwable.toString);
+            writef_failure("        ERROR: this(): ", throwable.toString, "\n");
             ++errorCount;
         }
         if (testObject is null)
@@ -409,14 +348,14 @@ public static int runTests_Tree(string[][string] testNamesByClass)
         }
         catch (AssertException exception)
         {
-            writefln("        FAILURE: BeforeClass: %s@%s(%d): %s",
+            writef_failure("        FAILURE: BeforeClass: %s@%s(%d): %s\n",
                     typeid(exception).name, exception.file, exception.line, exception.msg);
             ++failureCount;
             continue;
         }
         catch (Throwable throwable)
         {
-            writeln("        ERROR: BeforeClass: ", throwable.toString);
+            writef_failure("        ERROR: BeforeClass: ", throwable.toString, "\n");
             ++errorCount;
             continue;
         }
@@ -426,7 +365,7 @@ public static int runTests_Tree(string[][string] testNamesByClass)
         {
             if (canFind(testClasses[className].ignoredTests, testName))
             {
-                writeln("        IGNORE: ", testName, "()");
+                writef_ignored("        IGNORE: " ~ testName ~ "()\n");
                 continue;
             }
 
@@ -437,14 +376,14 @@ public static int runTests_Tree(string[][string] testNamesByClass)
             }
             catch (AssertException exception)
             {
-                writefln("        FAILURE: Before: %s@%s(%d): %s",
+                writef_failure("        FAILURE: Before: %s@%s(%d): %s\n",
                         typeid(exception).name, exception.file, exception.line, exception.msg);
                 ++failureCount;
                 continue;
             }
             catch (Throwable throwable)
             {
-                writeln("        ERROR: Before: ", throwable.toString);
+                writef_failure("        ERROR: Before: ", throwable.toString, "\n");
                 ++errorCount;
                 continue;
             }
@@ -455,17 +394,17 @@ public static int runTests_Tree(string[][string] testNamesByClass)
                 TickDuration startTime = TickDuration.currSystemTick();
                 testClasses[className].test(testObject, testName);
                 double elapsedMs = (TickDuration.currSystemTick() - startTime).usecs() / 1000.0;
-                writefln("        OK: %6.2f ms  %s()", elapsedMs, testName);
+                writef_success("        OK: %6.2f ms  %s()\n", elapsedMs, testName);
             }
             catch (AssertException exception)
             {
-                writefln("        FAILURE: " ~ testName ~ "(): %s@%s(%d): %s",
+                writef_failure("        FAILURE: " ~ testName ~ "(): %s@%s(%d): %s\n",
                         typeid(exception).name, exception.file, exception.line, exception.msg);
                 ++failureCount;
             }
             catch (Throwable throwable)
             {
-                writeln("        ERROR: ", testName, "(): ", throwable.toString);
+                writef_failure("        ERROR: ", testName, "(): ", throwable.toString, "\n");
                 ++errorCount;
             }
 
@@ -476,13 +415,13 @@ public static int runTests_Tree(string[][string] testNamesByClass)
             }
             catch (AssertException exception)
             {
-                writefln("        FAILURE: After: %s@%s(%d): %s",
+                writef_failure("        FAILURE: After: %s@%s(%d): %s\n",
                         typeid(exception).name, exception.file, exception.line, exception.msg);
                 ++failureCount;
             }
             catch (Throwable throwable)
             {
-                writeln("        ERROR: After: ", throwable.toString);
+                writef_failure("        ERROR: After: ", throwable.toString,"\n");
                 ++errorCount;
             }
         }
@@ -494,17 +433,186 @@ public static int runTests_Tree(string[][string] testNamesByClass)
         }
         catch (AssertException exception)
         {
-            writefln("        FAILURE: AfterClass: %s@%s(%d): %s",
+            writef_failure("        FAILURE: AfterClass: %s@%s(%d): %s\n",
                     typeid(exception).name, exception.file, exception.line, exception.msg);
             ++failureCount;
         }
         catch (Throwable throwable)
         {
-            writeln("        ERROR: AfterClass: ", throwable.toString);
+            writef_failure("        ERROR: AfterClass: ", throwable.toString,"\n");
             ++errorCount;
         }
     }
     return (errorCount > 0) ? 2 : (failureCount > 0) ? 1 : 0;
+}
+
+version(Posix)
+{
+    private static void writef_success(Char, A...)(in Char[] fmt, A args)
+    {
+        // Set the foreground green
+        if (canUseColor())
+        {
+            write(CSI,"37;42;1m");
+        }
+
+        writef(fmt,args);
+
+        // Restore original color
+        if (canUseColor())
+        {
+            write(CSI,"0m");
+        }
+
+        stdout.flush();
+    }
+}
+else
+{
+    private static void writef_success(Char, A...)(in Char[] fmt, A args)
+    {
+        import core.sys.windows.windows;
+
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_SCREEN_BUFFER_INFO info;
+
+        // Set the foreground green
+        if (canUseColor())
+        {
+            GetConsoleScreenBufferInfo(hConsole, &info);
+            SetConsoleTextAttribute(hConsole,FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        }
+
+        writef(fmt,args);
+
+        // Restore original color
+        if (canUseColor())
+        {
+            stdout.flush();
+            SetConsoleTextAttribute(hConsole,info.wAttributes);
+        }
+    }
+}
+
+version(Posix)
+{
+    private static void writef_failure(Char, A...)(in Char[] fmt, A args)
+    {
+        // Set the foreground green
+        if (canUseColor())
+        {
+            write(CSI,"37;41;1m");
+        }
+
+        writef(fmt,args);
+
+        // Restore original color
+        if (canUseColor())
+        {
+            write(CSI,"0m");
+            stdout.flush();
+        }
+    }
+}
+else
+{
+    private static void writef_failure(Char, A...)(in Char[] fmt, A args)
+    {
+        import core.sys.windows.windows;
+
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_SCREEN_BUFFER_INFO info;
+
+        // Set the foreground red
+        if (canUseColor())
+        {
+            GetConsoleScreenBufferInfo(hConsole, &info);
+            SetConsoleTextAttribute(hConsole,FOREGROUND_RED | FOREGROUND_INTENSITY);
+        }
+
+        writef(fmt,args);
+
+        // Restore original color
+        if (canUseColor())
+        {
+            stdout.flush();
+            SetConsoleTextAttribute(hConsole,info.wAttributes);
+        }
+    }
+}
+
+version(Posix)
+{
+    private static void writef_ignored(Char, A...)(in Char[] fmt, A args)
+    {
+        // Set the foreground yellow
+        if (canUseColor())
+        {
+            write(CSI,"37;42;1m");
+        }
+
+        writef(fmt,args);
+
+        // Restore original color
+        if (canUseColor())
+        {
+            write(CSI,"0m");
+        }
+
+        stdout.flush();
+    }
+}
+else
+{
+    private static void writef_ignored(Char, A...)(in Char[] fmt, A args)
+    {
+        import core.sys.windows.windows;
+
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_SCREEN_BUFFER_INFO info;
+
+        // Set the foreground yellow
+        if (canUseColor())
+        {
+            GetConsoleScreenBufferInfo(hConsole, &info);
+            SetConsoleTextAttribute(hConsole,FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        }
+
+        writef(fmt,args);
+
+        // Restore original color
+        if (canUseColor())
+        {
+            stdout.flush();
+            SetConsoleTextAttribute(hConsole,info.wAttributes);
+        }
+    }
+}
+
+private static bool canUseColor()
+{
+    static bool useColor = false;
+    static bool computed = false;
+
+    if (!computed)
+    {
+        // disable colors if the results output is written to a file or pipe instead of a tty
+        version(Posix)
+        {
+            import core.sys.posix.unistd;
+
+            useColor = isatty(stdout.fileno()) != 0;
+        }
+        else
+        {
+            import core.sys.windows.windows;
+            CONSOLE_SCREEN_BUFFER_INFO sbi;
+
+            useColor = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &sbi) > 0;
+        }
+        computed = true;
+    }
+    return useColor;
 }
 
 /**
