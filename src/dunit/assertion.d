@@ -473,3 +473,42 @@ unittest
     assertEquals("timed out",
             collectExceptionMsg!AssertException(assertEventually({ return false; })));
 }
+
+
+/**
+ * Asserts that the expresstion throws an exceotion of type E
+ * Throws: AssertException otherwise
+ */
+void assertThrows(E)(lazy void exp, lazy string msg = null,
+        string file = __FILE__,
+        size_t line = __LINE__)
+{
+	try
+	{
+		// this is expected to throw exception of type E
+		exp();
+		
+		// if we get here, the expected exception was not thrown
+		string header = (msg.empty) ? null : msg ~ "; ";
+	    fail(header ~ format("expected exception: <%s> was not thrown", fullyQualifiedName!(E)),
+	            file, line);
+	}
+	catch (E)
+	{
+		// this excption was expected
+	}
+}
+
+///
+unittest
+{
+	void f(bool b) { assert(b); }
+
+	assertThrows!(AssertError)(f(false));
+
+    assertEquals("expected exception: <core.exception.AssertError> was not thrown",
+        collectExceptionMsg!AssertException(assertThrows!(AssertError)(
+    		f(tru))
+	));
+}
+
