@@ -817,6 +817,14 @@ mixin template UnitTest()
         testClass.disabled = _attributeByMember!(typeof(this), Disabled);
         testClass.tags = _attributesByMember!(typeof(this), Tag);
 
+        Tag[] testClassTags = _attributes!(typeof(this), Tag);
+
+        if (testClassTags.length > 0)
+        {
+            foreach(test; testClass.tests)
+                testClass.tags[test] = testClass.tags.get(test, [])~testClassTags;
+        }
+
         static Object create()
         {
             mixin("return new " ~ typeof(this).stringof ~ "();");
@@ -884,6 +892,24 @@ mixin template UnitTest()
         foreach (memberFunction; memberFunctions)
             block ~= "testObject." ~ memberFunction ~ "();\n";
         return block;
+    }
+
+    template _attributes(T, Attribute)
+    {
+        static Attribute[] helper()
+        {
+            static if (__traits(compiles, _getUDAs!(T, Attribute)))
+            {
+                alias attributes = _getUDAs!(T, Attribute);
+
+                static if (attributes.length > 0)
+                    return attributes;
+                else return [];
+            }
+            else return [];
+        }
+
+        enum _attributes = helper;
     }
 
     template _members(T, alias attribute)
