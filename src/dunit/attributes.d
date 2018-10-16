@@ -1,10 +1,10 @@
 module dunit.attributes;
 
-enum AfterEach;
-enum AfterAll;
-enum BeforeEach;
-enum BeforeAll;
-enum Test;
+struct AfterEach { }
+struct AfterAll { }
+struct BeforeEach { }
+struct BeforeAll { }
+struct Test { }
 
 struct Disabled
 {
