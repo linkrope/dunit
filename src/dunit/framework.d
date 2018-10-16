@@ -810,10 +810,12 @@ mixin template UnitTest()
 {
     private static this()
     {
+        import dunit.framework : choice, sequence, staticSequence;
+
         TestClass testClass;
 
         testClass.name = this.classinfo.name;
-        testClass.tests = _members!(typeof(this), Test);
+        testClass.tests = _members!Test;
         testClass.disabled = _attributeByMember!(typeof(this), Disabled);
         testClass.tags = _attributesByMember!(typeof(this), Tag);
 
@@ -824,27 +826,27 @@ mixin template UnitTest()
 
         static void beforeAll()
         {
-            mixin(_staticSequence(_members!(typeof(this), BeforeAll)));
+            mixin(staticSequence(_members!BeforeAll));
         }
 
         static void beforeEach(Object o)
         {
-            mixin(_sequence(_members!(typeof(this), BeforeEach)));
+            mixin(sequence(typeof(this).stringof, _members!BeforeEach));
         }
 
         void test(Object o, string name)
         {
-            mixin(_choice(_members!(typeof(this), Test)));
+            mixin(choice(typeof(this).stringof, _members!Test));
         }
 
         static void afterEach(Object o)
         {
-            mixin(_sequence(_members!(typeof(this), AfterEach)));
+            mixin(sequence(typeof(this).stringof, _members!AfterEach));
         }
 
         static void afterAll()
         {
-            mixin(_staticSequence(_members!(typeof(this), AfterAll)));
+            mixin(staticSequence(_members!AfterAll));
         }
 
         testClass.create = &create;
@@ -857,54 +859,27 @@ mixin template UnitTest()
         testClasses ~= testClass;
     }
 
-    private static string _choice(in string[] memberFunctions)
-    {
-        string block = "auto testObject = cast(" ~ typeof(this).stringof ~ ") o;\n";
-
-        block ~= "switch (name)\n{\n";
-        foreach (memberFunction; memberFunctions)
-            block ~= `case "` ~ memberFunction ~ `": testObject.` ~ memberFunction ~ "(); break;\n";
-        block ~= "default: break;\n}\n";
-        return block;
-    }
-
-    private static string _staticSequence(in string[] memberFunctions)
-    {
-        string block = null;
-
-        foreach (memberFunction; memberFunctions)
-            block ~= memberFunction ~ "();\n";
-        return block;
-    }
-
-    private static string _sequence(in string[] memberFunctions)
-    {
-        string block = "auto testObject = cast(" ~ typeof(this).stringof ~ ") o;\n";
-
-        foreach (memberFunction; memberFunctions)
-            block ~= "testObject." ~ memberFunction ~ "();\n";
-        return block;
-    }
-
-    template _members(T, alias attribute)
+    private template _members(alias attribute)
     {
         static string[] helper()
         {
-            import std.meta : AliasSeq;
-            import std.traits : hasUDA;
+            if (!__ctfe)
+            {
+                return null;
+            }
+
+            import dunit.framework : attributesInclude;
 
             string[] members;
 
-            foreach (name; __traits(allMembers, T))
+            foreach (name; __traits(allMembers, typeof(this)))
             {
-                static if (__traits(compiles, __traits(getMember, T, name)))
+                static if (__traits(compiles, __traits(getMember, typeof(this), name)))
                 {
-                    alias member = AliasSeq!(__traits(getMember, T, name));
-
-                    static if (__traits(compiles, hasUDA!(member, attribute)))
+                    static if (attributesInclude!(attribute,
+                        __traits(getAttributes, __traits(getMember, typeof(this), name))))
                     {
-                        static if (hasUDA!(member, attribute))
-                            members ~= name;
+                        members ~= name;
                     }
                 }
             }
@@ -918,6 +893,11 @@ mixin template UnitTest()
     {
         static Attribute[string] helper()
         {
+            if (!__ctfe)
+            {
+                return null;
+            }
+
             import std.format : format;
             import std.meta : AliasSeq;
 
@@ -954,6 +934,11 @@ mixin template UnitTest()
     {
         static Attribute[][string] helper()
         {
+            if (!__ctfe)
+            {
+                return null;
+            }
+
             import std.meta : AliasSeq;
 
             Attribute[][string] attributesByMember;
@@ -984,6 +969,11 @@ mixin template UnitTest()
     {
         static auto helper()
         {
+            if (!__ctfe)
+            {
+                return null;
+            }
+
             Attribute[] attributes;
 
             static if (__traits(compiles, __traits(getAttributes, member)))
@@ -1000,5 +990,50 @@ mixin template UnitTest()
         }
 
         enum _getUDAs = helper;
+    }
+}
+
+public string choice(const string className, const string[] memberFunctions)
+{
+    string block = "auto testObject = cast(" ~ className ~ ") o;\n";
+
+    block ~= "switch (name)\n{\n";
+    foreach (memberFunction; memberFunctions)
+        block ~= `case "` ~ memberFunction ~ `": testObject.` ~ memberFunction ~ "(); break;\n";
+    block ~= "default: break;\n}\n";
+    return block;
+}
+
+public string staticSequence(const string[] memberFunctions)
+{
+    string block = null;
+
+    foreach (memberFunction; memberFunctions)
+        block ~= memberFunction ~ "();\n";
+    return block;
+}
+
+public string sequence(const string className, const string[] memberFunctions)
+{
+    string block = "auto testObject = cast(" ~ className ~ ") o;\n";
+
+    foreach (memberFunction; memberFunctions)
+        block ~= "testObject." ~ memberFunction ~ "();\n";
+    return block;
+}
+
+template attributesInclude(alias attribute, attributes...)
+{
+    static if (attributes.length == 0)
+    {
+        enum attributesInclude = false;
+    }
+    else static if (is(attribute == attributes[0]))
+    {
+        enum attributesInclude = true;
+    }
+    else
+    {
+        enum attributesInclude = attributesInclude!(attribute, attributes[1 .. $]);
     }
 }
