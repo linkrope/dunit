@@ -1,5 +1,7 @@
 module dunit.attributes;
 
+import std.system;
+
 enum AfterEach;
 enum AfterAll;
 enum BeforeEach;
@@ -14,6 +16,40 @@ struct Disabled
 struct Tag
 {
     string name;
+}
+
+struct EnabledIf
+{
+    bool condition;
+    string reason;
+}
+
+struct DisabledIf
+{
+    bool condition;
+    string reason;
+}
+
+struct EnabledIfEnvironmentVariable
+{
+    string named;
+    string matches = ".*";
+}
+
+struct DisabledIfEnvironmentVariable
+{
+    string named;
+    string matches = ".*";
+}
+
+struct EnabledOnOs
+{
+    OS[] os;
+}
+
+struct DisabledOnOs
+{
+    OS[] os;
 }
 
 deprecated("use AfterEach instead") alias After = AfterEach;

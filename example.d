@@ -17,6 +17,7 @@ import core.thread;
 import core.time;
 import std.range;
 import std.stdio;
+import std.system : os;
 
 /**
  * This example demonstrates the reporting of test failures.
@@ -156,6 +157,86 @@ class TestingThisAndThat
     @Test
     @Disabled("not ready yet")
     public void failure() @safe pure
+    {
+        testResult(false);
+    }
+
+    // enabled by condition test function
+    @Test
+    @EnabledIf(true, "not ready yet")
+    public void enabledByCondition() @safe pure
+    {
+        testResult(true);
+    }
+
+    // not enabled by condition test function
+    @Test
+    @EnabledIf(false, "not ready yet")
+    public void notEnabledByCondition() @safe pure
+    {
+        testResult(false);
+    }
+
+    // disabled by condition test function
+    @Test
+    @DisabledIf(true, "not ready yet")
+    public void disabledByCondition() @safe pure
+    {
+        testResult(false);
+    }
+
+    // not disabled by condition test function
+    @Test
+    @DisabledIf(false, "not ready yet")
+    public void notDisabledByCondition() @safe pure
+    {
+        testResult(true);
+    }
+
+    // enabled by environment variable test function
+    @Test
+    @EnabledIfEnvironmentVariable("PATH", ".*")
+    public void enabledByEnvironmentVariable() @safe pure
+    {
+        testResult(true);
+    }
+
+    // not enabled by environment variable test function
+    @Test
+    @EnabledIfEnvironmentVariable("PATH", "42")
+    public void notEnabledByEnvironmentVariable() @safe pure
+    {
+        testResult(false);
+    }
+
+    // disabled by environment variable test function
+    @Test
+    @DisabledIfEnvironmentVariable("PATH", ".*")
+    public void disabledByEnvironmentVariable() @safe pure
+    {
+        testResult(false);
+    }
+
+    // not disabled by environment variable test function
+    @Test
+    @DisabledIfEnvironmentVariable("PATH", "42")
+    public void notDisabledByEnvironmentVariable() @safe pure
+    {
+        testResult(true);
+    }
+
+    // enabled on os test function
+    @Test
+    @EnabledOnOs([os])
+    public void enabledByOs() @safe pure
+    {
+        testResult(true);
+    }
+
+    // disabled on os test function
+    @Test
+    @DisabledOnOs([os])
+    public void disabledByOs() @safe pure
     {
         testResult(false);
     }

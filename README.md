@@ -67,7 +67,9 @@ Thanks to D's User Defined Attributes, test names no longer have to start with
 
 Put `mixin UnitTest;` in your test class and attach `@Test`,
 `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`, `@Tag("...")`,
-and `@Disabled("...")`
+`@Disabled("...")`, `@EnabledIf(true, "...")`, `@DisabledIf(true, "...")`,
+`@EnabledIfEnvironmentVariable("FOO", "BAR")`, `@DisabledIfEnvironmentVariable("FOO", "BAR")`,
+`@EnabledOnOs([OS.linux])` and `@DisabledOnOs([OS.win32])`
 (borrowed from [JUnit 5]) to the member functions to state their purpose.
 
 ## Test Results
