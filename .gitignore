@@ -2,3 +2,5 @@ main
 exampleTests
 *.o
 *.swp
+*.exe
+.dub
