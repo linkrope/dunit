@@ -20,13 +20,13 @@ struct Tag
 
 struct EnabledIf
 {
-    bool condition;
+    bool function() condition;
     string reason;
 }
 
 struct DisabledIf
 {
-    bool condition;
+    bool function() condition;
     string reason;
 }
 
@@ -45,11 +45,21 @@ struct DisabledIfEnvironmentVariable
 struct EnabledOnOs
 {
     OS[] os;
+
+    this(OS[] os...)
+    {
+        this.os = os;
+    }
 }
 
 struct DisabledOnOs
 {
     OS[] os;
+
+    this(OS[] os...)
+    {
+        this.os = os;
+    }
 }
 
 deprecated("use AfterEach instead") alias After = AfterEach;

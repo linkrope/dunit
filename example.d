@@ -163,7 +163,7 @@ class TestingThisAndThat
 
     // enabled by condition test function
     @Test
-    @EnabledIf(true, "not ready yet")
+    @EnabledIf(() => true, "not ready yet")
     public void enabledByCondition() @safe pure
     {
         testResult(true);
@@ -171,7 +171,7 @@ class TestingThisAndThat
 
     // not enabled by condition test function
     @Test
-    @EnabledIf(false, "not ready yet")
+    @EnabledIf(() => false, "not ready yet")
     public void notEnabledByCondition() @safe pure
     {
         testResult(false);
@@ -179,7 +179,7 @@ class TestingThisAndThat
 
     // disabled by condition test function
     @Test
-    @DisabledIf(true, "not ready yet")
+    @DisabledIf(() => true, "not ready yet")
     public void disabledByCondition() @safe pure
     {
         testResult(false);
@@ -187,7 +187,7 @@ class TestingThisAndThat
 
     // not disabled by condition test function
     @Test
-    @DisabledIf(false, "not ready yet")
+    @DisabledIf(() => false, "not ready yet")
     public void notDisabledByCondition() @safe pure
     {
         testResult(true);
@@ -227,7 +227,7 @@ class TestingThisAndThat
 
     // enabled on os test function
     @Test
-    @EnabledOnOs([os])
+    @EnabledOnOs(os)
     public void enabledByOs() @safe pure
     {
         testResult(true);
@@ -235,7 +235,7 @@ class TestingThisAndThat
 
     // disabled on os test function
     @Test
-    @DisabledOnOs([os])
+    @DisabledOnOs(os)
     public void disabledByOs() @safe pure
     {
         testResult(false);

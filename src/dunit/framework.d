@@ -19,7 +19,7 @@ import std.stdio;
 import std.string;
 import std.process : environment;
 import std.regex : regex, matchFirst;
-import std.system : os;
+import std.system : os, OS;
 public import std.typetuple;
 
 struct TestClass
@@ -302,13 +302,13 @@ body
                 foreach (testListener; testListeners)
                     testListener.exitTest(success);
 
-            if (test in testClass.enabledIf && !testClass.enabledIf.get(test, EnabledIf.init).condition)
+            if (test in testClass.enabledIf && !testClass.enabledIf.get(test, EnabledIf.init).condition())
             {
                 string reason = testClass.enabledIf.get(test, EnabledIf.init).reason;
                 testClass.disabled[test] = Disabled(reason);
             }
 
-            if (test in testClass.disabledIf && testClass.disabledIf.get(test, DisabledIf.init).condition)
+            if (test in testClass.disabledIf && testClass.disabledIf.get(test, DisabledIf.init).condition())
             {
                 string reason = testClass.disabledIf.get(test, DisabledIf.init).reason;
                 testClass.disabled[test] = Disabled(reason);
@@ -321,7 +321,10 @@ body
                 
                 if (environment.get(named) is null || matchFirst(environment.get(named), regex(matches)).empty)
                 {
-                    testClass.disabled[test] = Disabled("");
+                    string reason = (environment.get(named) is null) ?
+                        "Environment variable " ~ named ~ " not defined." :
+                        "Environment variable " ~ named ~ " = '" ~ environment.get(named) ~ "' not matching pattern";
+                    testClass.disabled[test] = Disabled(reason);
                 }
             }
 
@@ -332,18 +335,23 @@ body
                 
                 if (environment.get(named) !is null && !matchFirst(environment.get(named), regex(matches)).empty)
                 {
-                    testClass.disabled[test] = Disabled("");
+                    string reason = "Environment variable " ~ named ~ " = '" ~ environment.get(named) ~ "' matching pattern";
+                    testClass.disabled[test] = Disabled(reason);
                 }
             }
 
             if (test in testClass.enabledOnOs && !testClass.enabledOnOs.get(test, EnabledOnOs.init).os.canFind(os))
             {
-                testClass.disabled[test] = Disabled("");
+                string operationSystemNames = testClass.enabledOnOs.get(test, EnabledOnOs.init).os.map!(osCode => OS(osCode).to!string).join(", ");
+                string reason = "Operation system " ~ OS(os).to!string ~ " not matching " ~ operationSystemNames;
+                testClass.disabled[test] = Disabled(reason);
             }
 
             if (test in testClass.disabledOnOs && testClass.disabledOnOs.get(test, DisabledOnOs.init).os.canFind(os))
             {
-                testClass.disabled[test] = Disabled("");
+                string operationSystemNames = testClass.disabledOnOs.get(test, DisabledOnOs.init).os.map!(osCode => OS(osCode).to!string).join(", ");
+                string reason = "Operation system " ~ OS(os).to!string ~ " matching " ~ operationSystemNames;
+                testClass.disabled[test] = Disabled(reason);
             }
 
             if (test in testClass.disabled || (initialized && !setUp))
