@@ -17,6 +17,9 @@ import std.array;
 import std.conv;
 import std.stdio;
 import std.string;
+import std.process : environment;
+import std.regex : regex, matchFirst;
+import std.system : os, OS;
 public import std.typetuple;
 
 struct TestClass
@@ -24,6 +27,12 @@ struct TestClass
     string name;
     string[] tests;
     Disabled[string] disabled;
+    EnabledIf[string] enabledIf;
+    DisabledIf[string] disabledIf;
+    EnabledIfEnvironmentVariable[string] enabledIfEnvVar;
+    DisabledIfEnvironmentVariable[string] disabledIfEnvVar;
+    EnabledOnOs[string] enabledOnOs;
+    DisabledOnOs[string] disabledOnOs;
     Tag[][string] tags;
 
     Object function() create;
@@ -292,6 +301,58 @@ body
             scope (exit)
                 foreach (testListener; testListeners)
                     testListener.exitTest(success);
+
+            if (test in testClass.enabledIf && !testClass.enabledIf.get(test, EnabledIf.init).condition())
+            {
+                string reason = testClass.enabledIf.get(test, EnabledIf.init).reason;
+                testClass.disabled[test] = Disabled(reason);
+            }
+
+            if (test in testClass.disabledIf && testClass.disabledIf.get(test, DisabledIf.init).condition())
+            {
+                string reason = testClass.disabledIf.get(test, DisabledIf.init).reason;
+                testClass.disabled[test] = Disabled(reason);
+            }
+
+            if (test in testClass.enabledIfEnvVar)
+            {
+                string named = testClass.enabledIfEnvVar.get(test, EnabledIfEnvironmentVariable.init).named;
+                string matches = testClass.enabledIfEnvVar.get(test, EnabledIfEnvironmentVariable.init).matches;
+                
+                if (environment.get(named) is null || matchFirst(environment.get(named), regex(matches)).empty)
+                {
+                    string reason = (environment.get(named) is null) ?
+                        "Environment variable " ~ named ~ " not defined." :
+                        "Environment variable " ~ named ~ " = '" ~ environment.get(named) ~ "' not matching pattern";
+                    testClass.disabled[test] = Disabled(reason);
+                }
+            }
+
+            if (test in testClass.disabledIfEnvVar)
+            {
+                string named = testClass.disabledIfEnvVar.get(test, DisabledIfEnvironmentVariable.init).named;
+                string matches = testClass.disabledIfEnvVar.get(test, DisabledIfEnvironmentVariable.init).matches;
+                
+                if (environment.get(named) !is null && !matchFirst(environment.get(named), regex(matches)).empty)
+                {
+                    string reason = "Environment variable " ~ named ~ " = '" ~ environment.get(named) ~ "' matching pattern";
+                    testClass.disabled[test] = Disabled(reason);
+                }
+            }
+
+            if (test in testClass.enabledOnOs && !testClass.enabledOnOs.get(test, EnabledOnOs.init).os.canFind(os))
+            {
+                string operationSystemNames = testClass.enabledOnOs.get(test, EnabledOnOs.init).os.map!(osCode => OS(osCode).to!string).join(", ");
+                string reason = "Operation system " ~ OS(os).to!string ~ " not matching " ~ operationSystemNames;
+                testClass.disabled[test] = Disabled(reason);
+            }
+
+            if (test in testClass.disabledOnOs && testClass.disabledOnOs.get(test, DisabledOnOs.init).os.canFind(os))
+            {
+                string operationSystemNames = testClass.disabledOnOs.get(test, DisabledOnOs.init).os.map!(osCode => OS(osCode).to!string).join(", ");
+                string reason = "Operation system " ~ OS(os).to!string ~ " matching " ~ operationSystemNames;
+                testClass.disabled[test] = Disabled(reason);
+            }
 
             if (test in testClass.disabled || (initialized && !setUp))
             {
@@ -813,6 +874,12 @@ mixin template UnitTest()
         testClass.name = this.classinfo.name;
         testClass.tests = _members!(typeof(this), Test);
         testClass.disabled = _attributeByMember!(typeof(this), Disabled);
+        testClass.enabledIf = _attributeByMember!(typeof(this), EnabledIf);
+        testClass.disabledIf = _attributeByMember!(typeof(this), DisabledIf);
+        testClass.enabledIfEnvVar = _attributeByMember!(typeof(this), EnabledIfEnvironmentVariable);
+        testClass.disabledIfEnvVar = _attributeByMember!(typeof(this), DisabledIfEnvironmentVariable);
+        testClass.enabledOnOs = _attributeByMember!(typeof(this), EnabledOnOs);
+        testClass.disabledOnOs = _attributeByMember!(typeof(this), DisabledOnOs);
         testClass.tags = _attributesByMember!(typeof(this), Tag);
 
         testClass.create = ()
