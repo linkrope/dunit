@@ -1,6 +1,6 @@
 module dunit.attributes;
 
-import std.system;
+import std.system : OS;
 
 enum AfterEach;
 enum AfterAll;
@@ -44,21 +44,21 @@ struct DisabledIfEnvironmentVariable
 
 struct EnabledOnOs
 {
-    OS[] os;
+    OS[] value;
 
-    this(OS[] os...)
+    this(OS[] value...)
     {
-        this.os = os;
+        this.value = value;
     }
 }
 
 struct DisabledOnOs
 {
-    OS[] os;
+    OS[] value;
 
-    this(OS[] os...)
+    this(OS[] value...)
     {
-        this.os = os;
+        this.value = value;
     }
 }
 

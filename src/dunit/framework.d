@@ -17,9 +17,6 @@ import std.array;
 import std.conv;
 import std.stdio;
 import std.string;
-import std.process : environment;
-import std.regex : regex, matchFirst;
-import std.system : os, OS;
 public import std.typetuple;
 
 struct TestClass
@@ -66,7 +63,7 @@ public int dunit_main(string[] args)
 {
     import std.getopt : config, defaultGetoptPrinter, getopt, GetoptResult;
     import std.path : baseName;
-    import std.regex : match;
+    import std.regex : matchFirst;
 
     GetoptResult result;
     string[] filters = null;
@@ -125,7 +122,7 @@ public int dunit_main(string[] args)
                 {
                     string fullyQualifiedName = testClass.name ~ '.' ~ test;
 
-                    if (match(fullyQualifiedName, filter))
+                    if (matchFirst(fullyQualifiedName, filter))
                     {
                         auto foundTestSelections = testSelections.find!"a.testClass.name == b"(testClass.name);
 
@@ -302,61 +299,13 @@ body
                 foreach (testListener; testListeners)
                     testListener.exitTest(success);
 
-            if (test in testClass.enabledIf && !testClass.enabledIf.get(test, EnabledIf.init).condition())
-            {
-                string reason = testClass.enabledIf.get(test, EnabledIf.init).reason;
-                testClass.disabled[test] = Disabled(reason);
-            }
+            const disablingCauses = findDisablingCauses(testClass, test);
 
-            if (test in testClass.disabledIf && testClass.disabledIf.get(test, DisabledIf.init).condition())
+            if ((initialized && !setUp) || !disablingCauses.empty)
             {
-                string reason = testClass.disabledIf.get(test, DisabledIf.init).reason;
-                testClass.disabled[test] = Disabled(reason);
-            }
-
-            if (test in testClass.enabledIfEnvVar)
-            {
-                string named = testClass.enabledIfEnvVar.get(test, EnabledIfEnvironmentVariable.init).named;
-                string matches = testClass.enabledIfEnvVar.get(test, EnabledIfEnvironmentVariable.init).matches;
-                
-                if (environment.get(named) is null || matchFirst(environment.get(named), regex(matches)).empty)
-                {
-                    string reason = (environment.get(named) is null) ?
-                        "Environment variable " ~ named ~ " not defined." :
-                        "Environment variable " ~ named ~ " = '" ~ environment.get(named) ~ "' not matching pattern";
-                    testClass.disabled[test] = Disabled(reason);
-                }
-            }
-
-            if (test in testClass.disabledIfEnvVar)
-            {
-                string named = testClass.disabledIfEnvVar.get(test, DisabledIfEnvironmentVariable.init).named;
-                string matches = testClass.disabledIfEnvVar.get(test, DisabledIfEnvironmentVariable.init).matches;
-                
-                if (environment.get(named) !is null && !matchFirst(environment.get(named), regex(matches)).empty)
-                {
-                    string reason = "Environment variable " ~ named ~ " = '" ~ environment.get(named) ~ "' matching pattern";
-                    testClass.disabled[test] = Disabled(reason);
-                }
-            }
-
-            if (test in testClass.enabledOnOs && !testClass.enabledOnOs.get(test, EnabledOnOs.init).os.canFind(os))
-            {
-                string operationSystemNames = testClass.enabledOnOs.get(test, EnabledOnOs.init).os.map!(osCode => OS(osCode).to!string).join(", ");
-                string reason = "Operation system " ~ OS(os).to!string ~ " not matching " ~ operationSystemNames;
-                testClass.disabled[test] = Disabled(reason);
-            }
-
-            if (test in testClass.disabledOnOs && testClass.disabledOnOs.get(test, DisabledOnOs.init).os.canFind(os))
-            {
-                string operationSystemNames = testClass.disabledOnOs.get(test, DisabledOnOs.init).os.map!(osCode => OS(osCode).to!string).join(", ");
-                string reason = "Operation system " ~ OS(os).to!string ~ " matching " ~ operationSystemNames;
-                testClass.disabled[test] = Disabled(reason);
-            }
-
-            if (test in testClass.disabled || (initialized && !setUp))
-            {
-                string reason = testClass.disabled.get(test, Disabled.init).reason;
+                const reason = (initialized && !setUp)
+                    ? "running @BeforeAll failed for preceding test case"
+                    : disablingCauses.front.reason;
 
                 foreach (testListener; testListeners)
                     testListener.skip(reason);
@@ -403,6 +352,75 @@ body
 
     foreach (testListener; testListeners)
         testListener.exit();
+}
+
+private Disabled[] findDisablingCauses(TestClass testClass, string test)
+{
+    import std.process : environment;
+    import std.regex : regex, matchFirst;
+    import std.system : os, OS;
+
+    Disabled[] disablingCauses;
+
+    if (test in testClass.disabled)
+    {
+        disablingCauses ~= testClass.disabled[test];
+    }
+    if (test in testClass.disabledOnOs) with (testClass.disabledOnOs[test])
+    {
+        if (value.canFind(os))
+        {
+            const reason = format("operating system %s included in %s", os, value);
+
+            disablingCauses ~= Disabled(reason);
+        }
+    }
+    if (test in testClass.enabledOnOs) with (testClass.enabledOnOs[test])
+    {
+        if (!value.canFind(os))
+        {
+            const reason = format("operating system %s not included in %s", os, value);
+
+            disablingCauses ~= Disabled(reason);
+        }
+    }
+    if (test in testClass.disabledIfEnvVar) with (testClass.disabledIfEnvVar[test])
+    {
+        if (environment.get(named) !is null && matchFirst(environment.get(named), regex(matches)))
+        {
+            const reason = format(`value "%s" of environment variable %s matches %s`,
+                    environment.get(named), named, matches);
+
+            disablingCauses ~= Disabled(reason);
+        }
+    }
+    if (test in testClass.enabledIfEnvVar) with (testClass.enabledIfEnvVar[test])
+    {
+        if (environment.get(named) is null)
+        {
+            const reason = format("environment variable %s not set", named);
+
+            disablingCauses ~= Disabled(reason);
+        }
+        else if (!matchFirst(environment.get(named), regex(matches)))
+        {
+            const reason = format(`value "%s" of environment variable %s does not match %s`,
+                    environment.get(named), named, matches);
+
+            disablingCauses ~= Disabled(reason);
+        }
+    }
+    if (test in testClass.disabledIf) with (testClass.disabledIf[test])
+    {
+        if (condition())
+            disablingCauses ~= Disabled(reason);
+    }
+    if (test in testClass.enabledIf) with (testClass.enabledIf[test])
+    {
+        if (!condition())
+            disablingCauses ~= Disabled(reason);
+    }
+    return disablingCauses;
 }
 
 private __gshared TestListener[] testListeners = null;

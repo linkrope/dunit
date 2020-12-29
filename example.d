@@ -161,55 +161,39 @@ class TestingThisAndThat
         testResult(false);
     }
 
-    // enabled by condition test function
+    // disabled, because condition is true
     @Test
-    @EnabledIf(() => true, "not ready yet")
-    public void enabledByCondition() @safe pure
-    {
-        testResult(true);
-    }
-
-    // not enabled by condition test function
-    @Test
-    @EnabledIf(() => false, "not ready yet")
-    public void notEnabledByCondition() @safe pure
-    {
-        testResult(false);
-    }
-
-    // disabled by condition test function
-    @Test
-    @DisabledIf(() => true, "not ready yet")
+    @DisabledIf(() => true, "disabled by condition")
     public void disabledByCondition() @safe pure
     {
         testResult(false);
     }
 
-    // not disabled by condition test function
+    // not disabled, because condition is false
     @Test
-    @DisabledIf(() => false, "not ready yet")
+    @DisabledIf(() => false, "disabled by condition")
     public void notDisabledByCondition() @safe pure
     {
         testResult(true);
     }
 
-    // enabled by environment variable test function
+    // not disabled, because condition is true
     @Test
-    @EnabledIfEnvironmentVariable("PATH", ".*")
-    public void enabledByEnvironmentVariable() @safe pure
+    @EnabledIf(() => true, "not enabled by condition")
+    public void enabledByCondition() @safe pure
     {
         testResult(true);
     }
 
-    // not enabled by environment variable test function
+    // disabled, because condition is false
     @Test
-    @EnabledIfEnvironmentVariable("PATH", "42")
-    public void notEnabledByEnvironmentVariable() @safe pure
+    @EnabledIf(() => false, "not enabled by condition")
+    public void notEnabledByCondition() @safe pure
     {
         testResult(false);
     }
 
-    // disabled by environment variable test function
+    // disabled, because environment variable matches pattern
     @Test
     @DisabledIfEnvironmentVariable("PATH", ".*")
     public void disabledByEnvironmentVariable() @safe pure
@@ -217,7 +201,7 @@ class TestingThisAndThat
         testResult(false);
     }
 
-    // not disabled by environment variable test function
+    // not disabled, because environment variable does not match pattern
     @Test
     @DisabledIfEnvironmentVariable("PATH", "42")
     public void notDisabledByEnvironmentVariable() @safe pure
@@ -225,20 +209,36 @@ class TestingThisAndThat
         testResult(true);
     }
 
-    // enabled on os test function
+    // not disabled, because environment variable matches pattern
     @Test
-    @EnabledOnOs(os)
-    public void enabledByOs() @safe pure
+    @EnabledIfEnvironmentVariable("PATH", ".*")
+    public void enabledByEnvironmentVariable() @safe pure
     {
         testResult(true);
     }
 
-    // disabled on os test function
+    // disabled, because environment variable does not match pattern
+    @Test
+    @EnabledIfEnvironmentVariable("PATH", "42")
+    public void notEnabledByEnvironmentVariable() @safe pure
+    {
+        testResult(false);
+    }
+
+    // disabled on the operating system on which the program runs
     @Test
     @DisabledOnOs(os)
     public void disabledByOs() @safe pure
     {
         testResult(false);
+    }
+
+    // not disabled on the operating system on which the program runs
+    @Test
+    @EnabledOnOs(os)
+    public void enabledByOs() @safe pure
+    {
+        testResult(true);
     }
 
     // failed contracts are errors, not failures
