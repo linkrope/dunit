@@ -11,6 +11,11 @@
 		},
 		"undead": ">=1.1.1"
 	},
+    "buildTypes": {
+		"strict": {
+			"buildOptions": ["deprecationErrors", "warningsAsErrors"]
+		}
+	},
     "configurations": [
         {
             "name": "library",
@@ -19,7 +24,7 @@
         {
             "name": "unittest",
             "targetType": "executable",
-            "sourceFiles": ["test/main.d"]
+            "mainSourceFile": "test/main.d"
         }
     ]
 }
