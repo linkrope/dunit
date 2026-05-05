@@ -1,5 +1,13 @@
+# Ignore Intellij IDEA folder:
+.idea
+*.iml
+
+# Ignore Sublime Text workspace (project file is ok):
+*.sublime-workspace
+
 *.a
 *.o
+*.lst
 *.swp
 *.exe
 .dub

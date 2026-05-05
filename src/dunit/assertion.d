@@ -7,7 +7,7 @@
 module dunit.assertion;
 
 import core.thread;
-import core.time;
+import core.time : MonoTime;
 import std.algorithm;
 import std.array;
 import std.conv;
@@ -669,11 +669,11 @@ public static void assertEventually(bool delegate() probe,
         string file = __FILE__,
         size_t line = __LINE__)
 {
-    const startTime = TickDuration.currSystemTick();
+    const startTime = MonoTime.currTime;
 
     while (!probe())
     {
-        const elapsedTime = cast(Duration)(TickDuration.currSystemTick() - startTime);
+        const elapsedTime = cast(Duration)(MonoTime.currTime - startTime);
 
         if (elapsedTime >= timeout)
             fail(msg.empty ? "timed out" : msg, file, line);

@@ -11,7 +11,8 @@ import dunit.attributes;
 import dunit.color;
 
 import core.runtime;
-import core.time;
+// import core.time : TickDuration;
+import core.time : Duration, MonoTime;
 import std.algorithm;
 import std.array;
 import std.conv;
@@ -559,7 +560,7 @@ class IssueReporter : TestListener
 class DetailReporter : TestListener
 {
     private string test;
-    private TickDuration startTime;
+    private MonoTime startTime;
 
     public override void enterClass(string className)
     {
@@ -569,7 +570,7 @@ class DetailReporter : TestListener
     public override void enterTest(string test)
     {
         this.test = test;
-        this.startTime = TickDuration.currSystemTick();
+        this.startTime = MonoTime.currTime;
     }
 
     public override void skip(string reason)
@@ -599,10 +600,10 @@ class DetailReporter : TestListener
     {
         if (success)
         {
-            const elapsed = (TickDuration.currSystemTick() - this.startTime).usecs() / 1_000.0;
+            Duration elapsed = MonoTime.currTime() - this.startTime;
 
             writec(Color.green, "    OK: ");
-            writefln("%6.2f ms  %s", elapsed, this.test);
+            writefln("%6.2f ms  %s", elapsed.total!"msecs", this.test);
         }
     }
 
@@ -690,7 +691,7 @@ class XmlReporter : TestListener
 
     private Document testCase;
     private string className;
-    private TickDuration startTime;
+    private MonoTime startTime;
 
     public override void enterClass(string className)
     {
@@ -702,7 +703,7 @@ class XmlReporter : TestListener
         this.testCase = new Document(new Tag("testcase"));
         this.testCase.tag.attr["classname"] = this.className;
         this.testCase.tag.attr["name"] = test;
-        this.startTime = TickDuration.currSystemTick();
+        this.startTime = MonoTime.currTime;
     }
 
     public override void skip(string reason)
@@ -733,9 +734,9 @@ class XmlReporter : TestListener
 
     public override void exitTest(bool success)
     {
-        const elapsed = (TickDuration.currSystemTick() - this.startTime).msecs() / 1_000.0;
+        Duration elapsed = MonoTime.currTime() - this.startTime;
 
-        this.testCase.tag.attr["time"] = format("%.3f", elapsed);
+        this.testCase.tag.attr["time"] = format("%.3f", elapsed.total!"msecs");
 
         const report = join(this.testCase.pretty(4), "\n");
 
@@ -760,7 +761,7 @@ class ReportReporter : TestListener
     private Element testSuite;
     private Element testCase;
     private string className;
-    private TickDuration startTime;
+    private MonoTime startTime;
 
     public this(string fileName, string testSuiteName)
     {
@@ -782,7 +783,7 @@ class ReportReporter : TestListener
         this.testCase.tag.attr["classname"] = this.className;
         this.testCase.tag.attr["name"] = test;
         this.testSuite ~= this.testCase;
-        this.startTime = TickDuration.currSystemTick();
+        this.startTime = MonoTime.currTime;
     }
 
     public override void skip(string reason)
@@ -825,9 +826,9 @@ class ReportReporter : TestListener
 
     public override void exitTest(bool success)
     {
-        const elapsed = (TickDuration.currSystemTick() - this.startTime).msecs() / 1_000.0;
+        Duration elapsed = MonoTime.currTime - this.startTime;
 
-        this.testCase.tag.attr["time"] = format("%.3f", elapsed);
+        this.testCase.tag.attr["time"] = format("%.3f", elapsed.total!"msecs");
     }
 
     public override void exit()

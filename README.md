@@ -1,6 +1,6 @@
 # xUnit Testing Framework for D
 
-[![Build Status](https://travis-ci.org/linkrope/dunit.svg?branch=master)](https://travis-ci.org/linkrope/dunit)
+[![DUB Package](https://img.shields.io/dub/v/d-unit.svg)](https://code.dlang.org/packages/d-unit) [![CI](https://github.com/linkrope/dunit/actions/workflows/dub.yml/badge.svg)](https://github.com/linkrope/dunit/actions/workflows/dub.yml)
 
 This is a simple implementation of the xUnit Testing Framework
 for the [D Programming Language].
