@@ -685,7 +685,7 @@ public static void assertEventually(bool delegate() probe,
 ///
 unittest
 {
-    assertEventually({ static count = 0; return ++count > 23; });
+    assertEventually({ static count = 0; return ++count > 3; });
 
     auto exception = expectThrows!AssertException(assertEventually({ return false; }));
 

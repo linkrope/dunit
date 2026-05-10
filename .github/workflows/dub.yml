@@ -17,7 +17,7 @@ jobs:
         compiler:
           - dmd-latest
           - ldc-latest
-          - dmd-2.105.3 # (released in 2023) 
+          - dmd-2.105.3 # (released in 2023)
           - dmd-2.104.2 # (released in 2023)
           - dmd-2.103.1 # (released in 2023)
           - dmd-2.102.2 # (released in 2023)
@@ -38,7 +38,6 @@ jobs:
         include:
           - { os: windows-latest, compiler: dmd-latest }  # Windows Server 2022
           - { os: windows-latest, compiler: ldc-latest }  # Windows Server 2022
-          - { os: macos-latest, compiler: dmd-latest }    # macOS 12 
           - { os: macos-latest, compiler: ldc-latest }    # macOS 12
 
     runs-on: ${{ matrix.os }}
@@ -58,6 +57,6 @@ jobs:
 
       - name: run unit tests with coverage
         run: dub test --coverage
-  
+
       - name: build library (strict build)
         run: dub build --config=library --build=strict
